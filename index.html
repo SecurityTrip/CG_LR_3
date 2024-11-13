@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Graphic Editor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>Graphic Editor</h1>
+<label for="colorPicker">Choose Color:</label>
+<input type="color" id="colorPicker" value="#000000">
+<label for="drawMode">Select Mode:</label>
+<select id="drawMode">
+  <option value="line">Line</option>
+  <option value="circle">Circle</option>
+  <option value="bezier">Bezier Curve</option>
+  <option value="fill">Fill Area</option>
+  <option value="erase">Erase</option>
+</select>
+<canvas id="canvas" width="800" height="600"></canvas>
+<script src="index.js"></script>
+</body>
+</html>
