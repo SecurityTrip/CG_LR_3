@@ -1,24 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Graphic Editor</title>
+  <title>Графический редактор</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>Graphic Editor</h1>
-<label for="colorPicker">Choose Color:</label>
+<h1>Графический редактор</h1>
+<label for="colorPicker">Выбор цвета:</label>
 <input type="color" id="colorPicker" value="#000000">
-<label for="drawMode">Select Mode:</label>
+<label for="drawMode">Выбор режима:</label>
 <select id="drawMode">
-  <option value="line">Line</option>
-  <option value="circle">Circle</option>
-  <option value="bezier">Bezier Curve</option>
-  <option value="fill">Fill Area</option>
-  <option value="erase">Erase</option>
+<!--  Lines-->
+<!--  Алгоритм Брезенхама рисования прямой-->
+  <option value="line">Алгоритм Брезенхама рисования прямой</option>
+<!--  Алгоритм Брезенхама рисования окружности-->
+  <option value="circle">Алгоритм Брезенхама рисования окружности</option>
+<!--  Кривые Безье (геометрический способ)-->
+  <option value="bezier">Кривые Безье (геометрический способ)</option>
+<!--  Fills-->
+<!--  Модифицированный рекурсивный алгоритм с "затравкой"-->
+  <option value="fill"> Модифицированный рекурсивный алгоритм с "затравкой"</option>
+<!--  Заполнение полигонов-->
+  <option value="fillPolygon">Заполнение полигонов</option>
+  <option value="erase">Стереть</option>
 </select>
-<canvas id="canvas" width="800" height="600"></canvas>
+<canvas id="canvas" width="1200" height="600"></canvas>
 <script src="index.js"></script>
 </body>
 </html>
