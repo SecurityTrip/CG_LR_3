@@ -87,13 +87,19 @@ function drawQuadraticBezier(P0, P1, P2, color) {
     }
 }
 
-// Модифицированный алгоритм закраски с «затравкой»
+// Модифицированный алгоритм закраски с «затравкой» с проверкой границ холста
 function seedFill(x, y, color) {
     const targetColor = ctx.getImageData(x, y, 1, 1).data;
     const stack = [[x, y]];
 
     while (stack.length > 0) {
         const [px, py] = stack.pop();
+
+        // Проверка, что пиксель в пределах холста
+        if (px < 0 || py < 0 || px >= canvas.width || py >= canvas.height) {
+            continue;
+        }
+
         const pixelColor = ctx.getImageData(px, py, 1, 1).data;
 
         // Проверка, является ли текущий цвет таким же, как и цвет начальной точки
@@ -102,7 +108,7 @@ function seedFill(x, y, color) {
 
             drawPixel(px, py, color);
 
-            // Добавляем соседние пиксели в стек для проверки
+            // Добавляем соседние пиксели в стек для проверки, если они в пределах холста
             stack.push([px + 1, py]); // справа
             stack.push([px - 1, py]); // слева
             stack.push([px, py + 1]); // снизу
@@ -112,8 +118,30 @@ function seedFill(x, y, color) {
 }
 
 
+// Функция для перерисовки всех сохранённых фигур и закрасок
+function redrawShapes() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const shape of shapes) {
+        const { type, startX, startY, endX, endY, color } = shape;
+        switch (type) {
+            case 'line':
+                drawLine(startX, startY, endX, endY, color);
+                break;
+            case 'circle':
+                const radius = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+                drawCircle(startX, startY, radius, color);
+                break;
+            case 'bezier':
+                drawQuadraticBezier({ x: startX, y: startY }, { x: (startX + endX) / 2, y: (startY + endY) / 2 }, { x: endX, y: endY }, color);
+                break;
+            case 'fill':
+                seedFill(startX, startY, color); // Используем закраску
+                break;
+        }
+    }
+}
 
-// Сохранение фигуры
+// Сохранение фигуры или закраски
 function saveShape(type, startX, startY, endX, endY, color) {
     shapes.push({ type, startX, startY, endX, endY, color });
 }
@@ -130,7 +158,7 @@ canvas.addEventListener('mousemove', (e) => {
 
     const currentX = e.offsetX;
     const currentY = e.offsetY;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    redrawShapes(); // Перерисовываем все фигуры
 
     switch (drawMode.value) {
         case 'line':
@@ -153,7 +181,9 @@ canvas.addEventListener('mouseup', (e) => {
 
     if (drawMode.value === 'fill') {
         seedFill(currentX, currentY, ctx.fillStyle); // Закраска затравочным алгоритмом
+        saveShape('fill', currentX, currentY, null, null, ctx.fillStyle); // Сохранение закраски
     } else {
         saveShape(drawMode.value, startX, startY, currentX, currentY, ctx.strokeStyle);
     }
+    redrawShapes(); // Обновляем холст, чтобы добавить новую фигуру
 });
