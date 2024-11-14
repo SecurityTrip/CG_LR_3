@@ -87,28 +87,87 @@ function drawQuadraticBezier(P0, P1, P2, color) {
     }
 }
 
-// Модифицированный алгоритм закраски с «затравкой» с проверкой границ холста
+// Функция для сравнения цветов
+function colorsMatch(colorA, colorB) {
+    return colorA[0] === colorB[0] && colorA[1] === colorB[1] && colorA[2] === colorB[2] && colorA[3] === colorB[3];
+}
+
+// Модифицированный алгоритм закраски с «затравкой»
 function seedFill(x, y, color) {
     const targetColor = ctx.getImageData(x, y, 1, 1).data;
+
+    //if (!colorsMatch(targetColor, color)) return;
+
+    const stack = [[x, y]];
+
+    while (stack.length > 0) {
+        const [sx, sy] = stack.pop();
+
+        // Начинаем закрашивание пикселей слева и справа от текущей точки
+        let left = sx;
+        let right = sx + 1;
+
+        while (left >= 0 && colorsMatch(ctx.getImageData(left, sy, 1, 1)?.data, targetColor)) {
+            drawPixel(left, sy, color);
+            left--;
+        }
+
+        while (
+            right < canvas.width &&
+            colorsMatch(
+                ctx.getImageData(right, sy, 1, 1)?.data,
+                targetColor
+            )
+            ) {
+            drawPixel(right, sy, color);
+            right++;
+        }
+
+        console.log(`Filled from Left: ${left + 1} to Right: ${right - 1}`);
+
+        // Теперь проходим по диапазону от left + 1 до right - 1
+        for (let ix = left + 1; ix < right; ix++) {
+            // Проверка строки выше
+            if (sy - 1 >= 0 && !colorsMatch(ctx.getImageData(ix, sy - 1, 1, 1)?.data, color) && colorsMatch(ctx.getImageData(ix, sy - 1, 1, 1)?.data, targetColor)) {
+                stack.push([ix, sy - 1]);
+                console.log(`Pushing pixel above (${ix}, ${sy - 1})`);
+            }
+            // Проверка строки ниже
+            if (
+                sy + 1 < canvas.height &&
+                !colorsMatch(
+                    ctx.getImageData(ix, sy + 1, 1, 1)?.data,
+                    color
+                ) &&
+                colorsMatch(
+                    ctx.getImageData(ix, sy + 1, 1, 1)?.data,
+                    targetColor
+                )
+            ) {
+                stack.push([ix, sy + 1]);
+                console.log(`Pushing pixel below (${ix}, ${sy + 1})`);
+            }
+        }
+    }
+}
+
+// Алгоритм "короеда"
+function barkBeetleFill(x, y, color) {
+    const targetColor = ctx.getImageData(x, y, 1, 1).data;
+    if (colorsMatch(targetColor, color)) return;
+
     const stack = [[x, y]];
 
     while (stack.length > 0) {
         const [px, py] = stack.pop();
 
-        // Проверка, что пиксель в пределах холста
-        if (px < 0 || py < 0 || px >= canvas.width || py >= canvas.height) {
-            continue;
-        }
+        if (px < 0 || py < 0 || px >= canvas.width || py >= canvas.height) continue;
 
         const pixelColor = ctx.getImageData(px, py, 1, 1).data;
 
-        // Проверка, является ли текущий цвет таким же, как и цвет начальной точки
-        if (pixelColor[0] === targetColor[0] && pixelColor[1] === targetColor[1] &&
-            pixelColor[2] === targetColor[2] && pixelColor[3] === targetColor[3]) {
-
+        if (colorsMatch(pixelColor, targetColor)) {
             drawPixel(px, py, color);
 
-            // Добавляем соседние пиксели в стек для проверки, если они в пределах холста
             stack.push([px + 1, py]); // справа
             stack.push([px - 1, py]); // слева
             stack.push([px, py + 1]); // снизу
@@ -116,6 +175,7 @@ function seedFill(x, y, color) {
         }
     }
 }
+
 
 
 // Функция для перерисовки всех сохранённых фигур и закрасок
@@ -135,7 +195,10 @@ function redrawShapes() {
                 drawQuadraticBezier({ x: startX, y: startY }, { x: (startX + endX) / 2, y: (startY + endY) / 2 }, { x: endX, y: endY }, color);
                 break;
             case 'fill':
-                seedFill(startX, startY, color); // Используем закраску
+                seedFill(startX, startY, color);
+                break;
+            case 'barkBeetleFill':
+                barkBeetleFill(startX, startY, color);
                 break;
         }
     }
@@ -158,7 +221,7 @@ canvas.addEventListener('mousemove', (e) => {
 
     const currentX = e.offsetX;
     const currentY = e.offsetY;
-    redrawShapes(); // Перерисовываем все фигуры
+    redrawShapes();
 
     switch (drawMode.value) {
         case 'line':
@@ -180,10 +243,14 @@ canvas.addEventListener('mouseup', (e) => {
     isDrawing = false;
 
     if (drawMode.value === 'fill') {
-        seedFill(currentX, currentY, ctx.fillStyle); // Закраска затравочным алгоритмом
-        saveShape('fill', currentX, currentY, null, null, ctx.fillStyle); // Сохранение закраски
+        seedFill(currentX, currentY, ctx.fillStyle);
+        saveShape('fill', currentX, currentY, null, null, ctx.fillStyle);
+    } else if (drawMode.value === 'barkBeetleFill') {
+        barkBeetleFill(currentX, currentY, ctx.fillStyle);
+        saveShape('barkBeetleFill', currentX, currentY, null, null, ctx.fillStyle);
     } else {
         saveShape(drawMode.value, startX, startY, currentX, currentY, ctx.strokeStyle);
     }
-    redrawShapes(); // Обновляем холст, чтобы добавить новую фигуру
+
+    redrawShapes();
 });
