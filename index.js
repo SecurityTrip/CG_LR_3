@@ -151,12 +151,26 @@ function seedFill(x, y, color) {
     }
 }
 
+// Матрица узора
+const patternMatrix = [
+    [0, 0, 1, 0, 0, 1, 0 ,0],
+    [0, 1, 0, 0, 0, 0, 1 ,0],
+    [1, 0, 0, 0, 0, 0, 0 ,1],
+    [0, 0, 0, 1, 1, 0, 0 ,0],
+    [0, 0, 0, 1, 1, 0, 0 ,0],
+    [1, 0, 0, 0, 0, 0, 0 ,1],
+    [0, 1, 0, 0, 0, 0, 1 ,0],
+    [0, 0, 1, 0, 0, 1, 0 ,0]
+];
+
 // Алгоритм "короеда"
-function barkBeetleFill(x, y, color) {
+function barkBeetleFill(x, y, color1, color2) {
     const targetColor = ctx.getImageData(x, y, 1, 1).data;
-    if (colorsMatch(targetColor, color)) return;
+    if (colorsMatch(targetColor, color1)) return;
 
     const stack = [[x, y]];
+    const patternHeight = patternMatrix.length;
+    const patternWidth = patternMatrix[0].length;
 
     while (stack.length > 0) {
         const [px, py] = stack.pop();
@@ -166,7 +180,12 @@ function barkBeetleFill(x, y, color) {
         const pixelColor = ctx.getImageData(px, py, 1, 1).data;
 
         if (colorsMatch(pixelColor, targetColor)) {
-            drawPixel(px, py, color);
+            // Определяем цвет клетки на основе матрицы
+            const matrixRow = Math.floor(py % patternHeight);
+            const matrixCol = Math.floor(px % patternWidth);
+            const fillColor = patternMatrix[matrixRow][matrixCol] === 1 ? color1 : color2;
+
+            drawPixel(px, py, fillColor);
 
             stack.push([px + 1, py]); // справа
             stack.push([px - 1, py]); // слева
@@ -198,15 +217,16 @@ function redrawShapes() {
                 seedFill(startX, startY, color);
                 break;
             case 'barkBeetleFill':
-                barkBeetleFill(startX, startY, color);
+                const color2 = '#FFFFFF';
+                barkBeetleFill(startX, startY, color, color2);
                 break;
         }
     }
 }
 
-// Сохранение фигуры или закраски
-function saveShape(type, startX, startY, endX, endY, color) {
-    shapes.push({ type, startX, startY, endX, endY, color });
+// Сохранение фигур или закрасок
+function saveShape(type, startX, startY, endX, endY, color, color1, color2) {
+    shapes.push({ type, startX, startY, endX, endY, color, color1, color2 });
 }
 
 // Управление рисованием с помощью мыши
